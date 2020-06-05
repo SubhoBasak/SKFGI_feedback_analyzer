@@ -1,10 +1,11 @@
 import sys
 from datetime import datetime
 
-from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QMessageBox, QWidget
 from PyQt5.QtCore import QAbstractTableModel, Qt
 from PyQt5.QtGui import QIcon
 from main_window import Ui_MainWindow
+from about_window import Ui_About
 
 import pandas as pd
 
@@ -33,6 +34,7 @@ class PandasModel(QAbstractTableModel):
 class Setup():
     def __init__(self):
         self.data = None
+        self.file = None
 
         self.root = QMainWindow()
         self.window = Ui_MainWindow()
@@ -41,20 +43,21 @@ class Setup():
 
         self.window.menuFile.addAction(QIcon('icons/open.ico'), 'Open', self.open_func, 'Ctrl+O')
         self.window.menuFile.addSeparator()
-        self.window.menuFile.addAction(QIcon('icons/save.ico'), 'Save', self.open_func, 'Ctrl+S')
-        self.window.menuFile.addAction(QIcon('icons/save_as.ico'), 'Save As', self.open_func, 'Ctrl+Shift+S')
+        self.window.menuFile.addAction(QIcon('icons/save.ico'), 'Save', self.save_func, 'Ctrl+S')
+        self.window.menuFile.addAction(QIcon('icons/save_as.ico'), 'Save As', self.save_as_func, 'Ctrl+Shift+S')
         self.window.menuFile.addSeparator()
         self.window.menuFile.addAction(QIcon('icons/exit.ico'), 'Quit', lambda : 0, 'Alt+F4') # todo, make this ready for deploy
 
         self.window.menuView.addAction(QIcon('icons/preview.ico'), 'Preview', self.open_func, 'Ctrl+P')
 
-        self.window.menuHelp.addAction(QIcon('icons/about.ico'), 'Help', self.open_func, 'Ctrl+H')
+        self.window.menuHelp.addAction(QIcon('icons/about.ico'), 'About', self.about_func, 'Ctrl+H')
         self.window.menuHelp.addAction(QIcon('icons/update.ico'), 'Check for update', self.open_func, 'Ctrl+U')
 
         self.window.open_button.clicked.connect(self.open_func)
         self.window.drop_button.clicked.connect(self.drop_func)
         self.window.select_button.clicked.connect(self.select_func)
         self.window.copy_csv_button.clicked.connect(self.copy_func)
+        self.window.save_button.clicked.connect(self.save_func)
 
         self.root.show()
 
@@ -94,6 +97,22 @@ class Setup():
             self.msg_box.setWindowTitle('Data Saved')
             self.msg_box.setInformativeText('New csv file is saved as '+tmp)
             self.msg_box.show()
+
+    def save_func(self):
+        if self.file:
+            print(self.file)
+        else:
+            self.save_as_func(title = 'Save')
+
+    def save_as_func(self, title = 'Save As'):
+        self.file, _ = QFileDialog.getSaveFileName(caption=title)
+
+    def about_func(self):
+        self.about = Ui_About()
+        self.about_widget = QWidget()
+        self.about.setupUi(self.about_widget)
+        self.about.retranslateUi(self.about_widget)
+        self.about_widget.show()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
