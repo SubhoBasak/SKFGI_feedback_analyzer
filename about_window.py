@@ -48,9 +48,9 @@ class Ui_About(object):
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         spacerItem4 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem4)
-        self.pushButton = QtWidgets.QPushButton(About)
-        self.pushButton.setObjectName("pushButton")
-        self.horizontalLayout_2.addWidget(self.pushButton)
+        self.doc_button = QtWidgets.QPushButton(About)
+        self.doc_button.setObjectName("doc_button")
+        self.horizontalLayout_2.addWidget(self.doc_button)
         spacerItem5 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem5)
         self.verticalLayout.addLayout(self.horizontalLayout_2)
@@ -72,4 +72,4 @@ class Ui_About(object):
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:9pt;\"><br /></p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:9pt; font-weight:600;\">Github repository</span><span style=\" font-size:9pt;\"> : </span><a href=\"https://github.com/SubhoBasak/SKFGI_feedback_analyzer\"><span style=\" font-size:9pt; text-decoration: underline; color:#0000ff;\">https://github.com/SubhoBasak/SKFGI_feedback_analyzer</span></a></p>\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"))
-        self.pushButton.setText(_translate("About", "Documentation"))
+        self.doc_button.setText(_translate("About", "Documentation"))

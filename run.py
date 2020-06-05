@@ -1,4 +1,6 @@
+import os
 import sys
+import webbrowser
 from datetime import datetime
 
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QMessageBox, QWidget
@@ -112,6 +114,10 @@ class Setup():
         self.about_widget = QWidget()
         self.about.setupUi(self.about_widget)
         self.about.retranslateUi(self.about_widget)
+
+        tmp = os.path.join(os.path.dirname(__file__), 'Documentation/index.html')
+        self.about.doc_button.clicked.connect(lambda : webbrowser.open(tmp))
+
         self.about_widget.show()
 
 if __name__ == '__main__':
