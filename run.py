@@ -12,7 +12,10 @@ from main_window import Ui_MainWindow
 from about_window import Ui_About
 
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
+
+matplotlib.use('Agg')
 
 class PandasModel(QAbstractTableModel):
     def __init__(self, data):
