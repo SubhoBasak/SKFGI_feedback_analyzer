@@ -5,14 +5,16 @@ import threading
 import webbrowser
 from datetime import datetime
 
-from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QMessageBox, QWidget, QSplashScreen
-from PyQt5.QtCore import QAbstractTableModel, Qt, QTimer
+from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QMessageBox, QWidget, QSplashScreen, QColorDialog
+from PyQt5.QtCore import QAbstractTableModel, Qt, QTimer, QSize
 from PyQt5.QtGui import QIcon, QPixmap, QColor
 from main_window import Ui_MainWindow
 from about_window import Ui_About
 from error_window import Ui_Error
 from setting_window import Ui_Setting
+from color_window import Ui_ColorPicker
 
+import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
@@ -45,7 +47,9 @@ class Setup():
     def __init__(self):
         self.loading_screen()
         self.data = None
+        self.output_data = None
         self.file = None
+        self.colors = ['#f0e443', '#f77e45', '#f74940', '#4bfa91', '#69d1d1', '#4a61f7']
         self.version = '1.0.0'
         self.map = [
             {'Excellent': 5,
@@ -69,11 +73,11 @@ class Setup():
         self.window.menuFile.addAction(QIcon('icons/save.ico'), 'Save', self.save_func, 'Ctrl+S')
         self.window.menuFile.addAction(QIcon('icons/save_as.ico'), 'Save As', self.save_as_func, 'Ctrl+Shift+S')
         self.window.menuFile.addSeparator()
-        self.window.menuFile.addAction(QIcon('icons/exit.ico'), 'Quit', lambda: 0,
-                                       'Alt+F4')  # todo, make this ready for deploy
+        self.window.menuFile.addAction(QIcon('icons/exit.ico'), 'Quit', lambda: 0, 'Alt+F4')  # todo, make this ready for deploy
 
-        self.window.menuOptions.addAction(QIcon('icons/preview.ico'), 'Preview', self.create_hist, 'Ctrl+P')
+        self.window.menuOptions.addAction(QIcon('icons/preview.ico'), 'Preview', self.create_output, 'Ctrl+P')
         self.window.menuOptions.addAction(QIcon('icons/setting.ico'), 'Setting', self.open_setting, 'Ctrl+X')
+        self.window.menuOptions.addAction(QIcon('icons/color'), 'Colors', self.change_graph_color, 'Ctrl+J')
 
         self.window.menuHelp.addAction(QIcon('icons/about.ico'), 'About', self.about_func, 'Ctrl+H')
         self.window.menuHelp.addAction(QIcon('icons/update.ico'), 'Check for update', self.open_func, 'Ctrl+U')
@@ -83,7 +87,9 @@ class Setup():
         self.window.select_button.clicked.connect(self.select_func)
         self.window.copy_csv_button.clicked.connect(self.copy_func)
         self.window.save_button.clicked.connect(self.save_func)
-        self.window.preview_button.clicked.connect(self.create_hist)
+        self.window.preview_button.clicked.connect(self.create_output)
+
+        self.window.column_list.setStyleSheet('color: blue;')
 
         self.root.show()
 
@@ -112,8 +118,23 @@ class Setup():
         if self.data.__class__.__name__  == 'DataFrame':
             self.df_model = PandasModel(self.data)
             self.window.data_table.setModel(self.df_model)
+            self.window.data_table.setStyleSheet(
+                '''QHeaderView::section{
+                        background-color: '#dcf7f7';
+                        color: blue;
+                        border: 0;}''')
             self.window.column_list.clear()
             self.window.column_list.addItems(list(self.data))
+
+            c = 0
+            for i in range(self.window.column_list.count()):
+                self.window.column_list.item(i).setSizeHint(QSize(100, 35))
+                if c:
+                    self.window.column_list.item(i).setBackground(QColor('#dcf7f7'))
+                    c = 0
+                else:
+                    self.window.column_list.item(i).setBackground(QColor('#ffffff'))
+                    c = 1
 
     def drop_func(self):
         if self.data.__class__.__name__  == 'DataFrame':
@@ -129,13 +150,14 @@ class Setup():
 
     def copy_func(self):
         if self.data.__class__.__name__ == 'DataFrame':
-            tmp = 'skfgi_feed_back_copy_'+str(datetime.isoformat(datetime.now()))+'.csv'
+            tmp = '\\skfgi_feed_back_copy_'+str(datetime.isoformat(datetime.now()))+'.csv'
             tmp = tmp.replace(':', '-')
+            tmp = os.path.expanduser('~')+tmp
             self.data.to_csv(tmp, index = False)
             self.msg_box = QMessageBox()
             self.msg_box.setWindowIcon(QIcon('icons/logo.png'))
             self.msg_box.setWindowTitle('Data Saved')
-            self.msg_box.setInformativeText('New csv file is saved as '+tmp)
+            self.msg_box.setInformativeText('New csv file is saved as :\n'+tmp)
             self.msg_box.show()
 
     def save_func(self): # todo, compelete this function
@@ -209,39 +231,143 @@ class Setup():
 
         for x, y in tmp:
             self.map[1][x.text()] = y.text()
-
         self.top_widget.close()
 
-    def create_hist(self):
-        # self.thread = threading.Thread(target = self.__create_hist)
-        # self.thread.start()
-        self.calculate_percentage()
+    def change_graph_color(self):
+        self.top = Ui_ColorPicker()
+        self.top_widget = QWidget()
+        self.top.setupUi(self.top_widget)
+        self.top.retranslateUi(self.top_widget)
 
-    def __create_hist(self):
-        if self.data.__class__.__name__ == 'DataFrame':
+        buttons = [self.top.color1_button, self.top.color2_button, self.top.color3_button,
+                   self.top.color4_button, self.top.color5_button, self.top.color6_button]
+
+        funcs = [self.get_color1, self.get_color2, self.get_color3,
+                 self.get_color4, self.get_color5, self.get_color6]
+
+        for i, b in enumerate(buttons):
+            b.setStyleSheet('background : '+self.colors[i]+';')
+            b.clicked.connect(funcs[i])
+
+        self.top.close_color_picker.clicked.connect(self.top_widget.close)
+        self.top_widget.show()
+
+    def get_color1(self):
+        win = QColorDialog()
+        win.setWindowIcon(QIcon('icons/logo.png'))
+        self.colors[0] = win.getColor().name()
+        self.top.color1_button.setStyleSheet('background : '+self.colors[0])
+
+    def get_color2(self):
+        win = QColorDialog()
+        win.setWindowIcon(QIcon('icons/logo.png'))
+        self.colors[1] = win.getColor().name()
+        self.top.color2_button.setStyleSheet('background : '+self.colors[1])
+
+    def get_color3(self):
+        win = QColorDialog()
+        win.setWindowIcon(QIcon('icons/logo.png'))
+        self.colors[2] = win.getColor().name()
+        self.top.color3_button.setStyleSheet('background : '+self.colors[2])
+
+    def get_color4(self):
+        win = QColorDialog()
+        win.setWindowIcon(QIcon('icons/logo.png'))
+        self.colors[3] = win.getColor().name()
+        self.top.color4_button.setStyleSheet('background : '+self.colors[3])
+
+    def get_color5(self):
+        win = QColorDialog()
+        win.setWindowIcon(QIcon('icons/logo.png'))
+        self.colors[4] = win.getColor().name()
+        self.top.color5_button.setStyleSheet('background : '+self.colors[4])
+
+    def get_color6(self):
+        win = QColorDialog()
+        win.setWindowIcon(QIcon('icons/logo.png'))
+        self.colors[5] = win.getColor().name()
+        self.top.color6_button.setStyleSheet('background : '+self.colors[5])
+
+    def create_output(self):
+        self.thread = threading.Thread(target = self.thread_func)
+        self.thread.start()
+
+    def thread_func(self):
+        self.prepare_output_data()
+        self.calculate_percentage_and_plot()
+
+    def calculate_percentage_and_plot(self):
+        if self.output_data.__class__.__name__ == 'DataFrame':
             for file in os.listdir('Tmp'):
                 os.remove('Tmp/'+file)
             fig = plt.figure(figsize=(12, 7))
-            for i, col in enumerate(self.data):
-                hist_data = self.data[col].value_counts().to_dict()
-                fig.clf()
-                plt.title(col)
-                plt.bar(hist_data.keys(), hist_data.values())
-                fig.savefig('Tmp/{}.png'.format(i))
+            for name, grp in self.output_data.groupby('subject'):
+                teachers_name = grp['teacher'].unique()
+                q = []
+                p = []
+                count = 1
+                for qus_, qus_grp in grp.groupby('question'):
+                    p.append(round(qus_grp.mean()['feedback'], 1))
+                    q.append('Q'+str(count))
+                    count += 1
 
-    def calculate_percentage(self):
+                fig.clf()
+                axs1 = fig.add_axes([0.07, 0.1, 0.7, 0.8])
+                fig.suptitle(name+'-'+'-'.join(teachers_name), fontsize = 25, color = 'orange')
+                axs1.bar(q, p, color = self.colors)
+                axs1.set_xticklabels(q, fontsize = 22)
+                axs1.set_yticklabels([20, 40, 60, 80, 100], fontsize = 22)
+                for xx, yy in enumerate(p):
+                    axs1.text(xx-0.4, yy, yy, fontsize = 13)
+
+                axs2 = fig.add_axes([0.8, 0.1, 0.1, 0.8])
+                table_data = np.c_[q, p]
+                length = len(table_data)
+                cell_colors = [('#ffffff', '#ffffff'), ('#e6f0f0', '#e6f0f0')]*(length//2)
+                if length%2 != 0:
+                    cell_colors += [('#ffffff', '#ffffff')]
+                tab = axs2.table(table_data, loc = 'upper center', cellColours=cell_colors, cellLoc = 'center')
+                tab.set_fontsize(25)
+                tab.scale(1, 2)
+                axs2.axis(False)
+                fig.savefig('Tmp/'+name+'-'+'-'.join(teachers_name)+'.png')
+
+    def prepare_output_data(self):
         if self.data.__class__.__name__ == 'DataFrame':
             try:
-                self.output_data = {}
+                self.output_data = {'question': [], 'subject': [], 'teacher': [], 'feedback': []}
                 for col in self.data:
                     qus, sub, tec = col.split('[')
-                    self.output_data['question'] = qus.strip().strip(']')
-                    self.output_data['subject'] = sub.strip().strip(']')
-                    self.output_data['teacher'] = sub.strip().strip(']')
+                    self.output_data['question'].append(qus.strip().strip(']'))
+                    self.output_data['subject'].append(sub.strip().strip(']'))
+                    self.output_data['teacher'].append(tec.strip().strip(']'))
 
-                    # if self.data[col].unique
+                    sup_flag = 0
+                    for m in self.map:
+                        flag = 1
+                        tmp_unique = m.keys()
+                        for k in self.data[col].unique():
+                            if k not in tmp_unique:
+                                flag = 0
+                                break
+                        if flag:
+                            tmp_col = self.data[col].map(m).astype('int32')
+                            tmp_max = max(m.values())
+                            sup_flag = 1
+                            break
+                    if not sup_flag:
+                        self.top = Ui_Error()
+                        self.top_widget = QWidget()
+                        self.top.setupUi(self.top_widget)
+                        self.top.retranslateUi(self.top_widget)
 
-                    # self.output_data['feedback'] =
+                        self.top.textBrowser.setText('Mapping error! Please set the map values proerly.\nOptions >> Settings')
+                        self.top.textBrowser.setTextColor(QColor(255, 0, 0))
+
+                        self.top_widget.show()
+                    else:
+                        self.output_data['feedback'].append(round(100*tmp_col.values.sum()/(tmp_max*len(tmp_col)), 2))
+                self.output_data = pd.DataFrame(self.output_data)
             except Exception as e:
                 self.top = Ui_Error()
                 self.top_widget = QWidget()
