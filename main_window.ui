@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1124</width>
+    <height>775</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -137,6 +137,15 @@
       </item>
       <item>
        <widget class="QSplitter" name="splitter">
+        <property name="cursor">
+         <cursorShape>ArrowCursor</cursorShape>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -217,7 +226,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1124</width>
      <height>26</height>
     </rect>
    </property>
@@ -226,9 +235,9 @@
      <string>File</string>
     </property>
    </widget>
-   <widget class="QMenu" name="menuView">
+   <widget class="QMenu" name="menuOptions">
     <property name="title">
-     <string>View</string>
+     <string>Options</string>
     </property>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -237,7 +246,7 @@
     </property>
    </widget>
    <addaction name="menuFile"/>
-   <addaction name="menuView"/>
+   <addaction name="menuOptions"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>

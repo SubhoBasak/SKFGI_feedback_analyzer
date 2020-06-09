@@ -7,9 +7,11 @@ from datetime import datetime
 
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QMessageBox, QWidget, QSplashScreen
 from PyQt5.QtCore import QAbstractTableModel, Qt, QTimer
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QColor
 from main_window import Ui_MainWindow
 from about_window import Ui_About
+from error_window import Ui_Error
+from setting_window import Ui_Setting
 
 import pandas as pd
 import matplotlib
@@ -45,6 +47,17 @@ class Setup():
         self.data = None
         self.file = None
         self.version = '1.0.0'
+        self.map = [
+            {'Excellent': 5,
+             'Very Good': 4,
+             'Good': 3,
+             'Poor': 2,
+             'Very Poor': 1},
+
+            {'Yes': 3,
+             'Partially Completed': 2,
+             'No': 1}
+        ]
 
         self.root = QMainWindow()
         self.window = Ui_MainWindow()
@@ -59,7 +72,8 @@ class Setup():
         self.window.menuFile.addAction(QIcon('icons/exit.ico'), 'Quit', lambda: 0,
                                        'Alt+F4')  # todo, make this ready for deploy
 
-        self.window.menuView.addAction(QIcon('icons/preview.ico'), 'Preview', self.create_hist, 'Ctrl+P')
+        self.window.menuOptions.addAction(QIcon('icons/preview.ico'), 'Preview', self.create_hist, 'Ctrl+P')
+        self.window.menuOptions.addAction(QIcon('icons/setting.ico'), 'Setting', self.open_setting, 'Ctrl+X')
 
         self.window.menuHelp.addAction(QIcon('icons/about.ico'), 'About', self.about_func, 'Ctrl+H')
         self.window.menuHelp.addAction(QIcon('icons/update.ico'), 'Check for update', self.open_func, 'Ctrl+U')
@@ -82,8 +96,17 @@ class Setup():
         self.file_dialog = QFileDialog()
         file_path, _ = self.file_dialog.getOpenFileName()
         if file_path != '':
-            self.data = pd.read_csv(file_path)
-            self.update_table()
+            try:
+                self.data = pd.read_csv(file_path)
+                self.update_table()
+            except Exception as e:
+                self.top = Ui_Error()
+                self.top_widget = QWidget()
+                self.top.setupUi(self.top_widget)
+                self.top.retranslateUi(self.top_widget)
+                self.top.textBrowser.setTextColor(QColor(255, 0, 0))
+                self.top.textBrowser.setText(repr(e))
+                self.top_widget.show()
 
     def update_table(self):
         if self.data.__class__.__name__  == 'DataFrame':
@@ -125,24 +148,74 @@ class Setup():
         self.file, _ = QFileDialog.getSaveFileName(caption=title)
 
     def about_func(self):
-        self.about = Ui_About()
-        self.about_widget = QWidget()
-        self.about.setupUi(self.about_widget)
-        self.about.retranslateUi(self.about_widget)
+        self.top = Ui_About()
+        self.top_widget = QWidget()
+        self.top.setupUi(self.top_widget)
+        self.top.retranslateUi(self.top_widget)
 
         tmp = os.path.join(os.path.dirname(__file__), 'Documentation/index.html')
-        self.about.doc_button.clicked.connect(lambda : webbrowser.open(tmp))
+        self.top.doc_button.clicked.connect(lambda : webbrowser.open(tmp))
 
-        self.about_widget.show()
+        self.top_widget.show()
 
     def check_update(self): # todo, complete the function
-        resp = requests.get(url = 'https://www.google.com') # todo, change to the correct url
+        resp = requests.get(url = 'https://www.google.com')
         if resp.json().get('version') != self.version:
             pass
 
+    def open_setting(self):
+        self.top = Ui_Setting()
+        self.top_widget = QWidget()
+        self.top.setupUi(self.top_widget)
+        self.top.retranslateUi(self.top_widget)
+
+        tmp = [(self.top.map_in_1, self.top.map_out_1),
+               (self.top.map_in_2, self.top.map_out_2),
+               (self.top.map_in_3, self.top.map_out_3),
+               (self.top.map_in_4, self.top.map_out_4),
+               (self.top.map_in_5, self.top.map_out_5)]
+
+        for x, y in zip(tmp, self.map[0].items()):
+            x1, x2 = x
+            y1, y2 = y
+            x1.setText(y1), x2.setText(str(y2))
+
+        tmp = [(self.top.map_in_11, self.top.map_out_11),
+               (self.top.map_in_12, self.top.map_out_12),
+               (self.top.map_in_13, self.top.map_out_13)]
+
+        for x, y in zip(tmp, self.map[1].items()):
+            x1, x2 = x
+            y1, y2 = y
+            x1.setText(y1), x2.setText(str(y2))
+
+        self.top.map_ok_button.clicked.connect(self.change_map)
+        self.top_widget.show()
+
+    def change_map(self):
+        tmp = [(self.top.map_in_1, self.top.map_out_1),
+               (self.top.map_in_2, self.top.map_out_2),
+               (self.top.map_in_3, self.top.map_out_3),
+               (self.top.map_in_4, self.top.map_out_4),
+               (self.top.map_in_5, self.top.map_out_5)]
+
+        self.map = [{}, {}]
+        for x, y in tmp:
+            self.map[0][x.text()] = y.text()
+
+        tmp = [(self.top.map_in_11, self.top.map_out_11),
+               (self.top.map_in_12, self.top.map_out_12),
+               (self.top.map_in_13, self.top.map_out_13)]
+
+        for x, y in tmp:
+            self.map[1][x.text()] = y.text()
+
+        self.top_widget.close()
+
     def create_hist(self):
-        self.thread = threading.Thread(target = self.__create_hist)
-        self.thread.start()
+        # self.thread = threading.Thread(target = self.__create_hist)
+        # self.thread.start()
+        self.calculate_percentage()
 
     def __create_hist(self):
         if self.data.__class__.__name__ == 'DataFrame':
@@ -152,8 +225,31 @@ class Setup():
             for i, col in enumerate(self.data):
                 hist_data = self.data[col].value_counts().to_dict()
                 fig.clf()
+                plt.title(col)
                 plt.bar(hist_data.keys(), hist_data.values())
                 fig.savefig('Tmp/{}.png'.format(i))
+
+    def calculate_percentage(self):
+        if self.data.__class__.__name__ == 'DataFrame':
+            try:
+                self.output_data = {}
+                for col in self.data:
+                    qus, sub, tec = col.split('[')
+                    self.output_data['question'] = qus.strip().strip(']')
+                    self.output_data['subject'] = sub.strip().strip(']')
+                    self.output_data['teacher'] = sub.strip().strip(']')
+
+                    # if self.data[col].unique
+
+                    # self.output_data['feedback'] =
+            except Exception as e:
+                self.top = Ui_Error()
+                self.top_widget = QWidget()
+                self.top.setupUi(self.top_widget)
+                self.top.retranslateUi(self.top_widget)
+                self.top.textBrowser.setTextColor(QColor(255, 0, 0))
+                self.top.textBrowser.setText(repr(e))
+                self.top_widget.show()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
