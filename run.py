@@ -174,7 +174,8 @@ class Setup():
             self.top.show()
             QTimer.singleShot(3000, self.top.close)
 
-            resp = requests.get(url = 'https://raw.githubusercontent.com/SubhoBasak/SKFGI_feedback_analyzer/tree/master/Output/version.txt')
+            resp = requests.get(url = 'https://raw.githubusercontent.com/SubhoBasak/SKFGI_feedback_analyzer/master/Output/version.txt')
+            print([resp.text])
             self.tmp = QMessageBox()
             self.tmp.setWindowTitle('Update')
             self.tmp.setWindowIcon(QIcon('icons/logo.png'))
