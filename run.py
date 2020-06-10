@@ -72,7 +72,7 @@ class Setup():
         self.window.menuFile.addSeparator()
         self.window.menuFile.addAction(QIcon('icons/save.ico'), 'Save', self.create_output, 'Ctrl+S')
         self.window.menuFile.addSeparator()
-        self.window.menuFile.addAction(QIcon('icons/exit.ico'), 'Quit', exit, 'Ctrl+Q')
+        self.window.menuFile.addAction(QIcon('icons/exit.ico'), 'Quit', lambda : exit(), 'Ctrl+Q')
 
         self.window.menuOptions.addAction(QIcon('icons/setting.ico'), 'Setting', self.open_setting, 'Ctrl+X')
         self.window.menuOptions.addAction(QIcon('icons/color'), 'Colors', self.change_graph_color, 'Ctrl+J')
@@ -175,11 +175,11 @@ class Setup():
             QTimer.singleShot(3000, self.top.close)
 
             resp = requests.get(url = 'https://raw.githubusercontent.com/SubhoBasak/SKFGI_feedback_analyzer/master/Output/version.txt')
-            print([resp.text])
+            resp = resp.text.strip('\n').strip()
             self.tmp = QMessageBox()
             self.tmp.setWindowTitle('Update')
             self.tmp.setWindowIcon(QIcon('icons/logo.png'))
-            if resp.text != self.version:
+            if resp != self.version:
                 self.tmp.setInformativeText('New update available!\nDownlaod from : https://raw.githubusercontent.com/SubhoBasak/SKFGI_feedback_analyzer/master/Output/mysetup.exe')
             else:
                 self.tmp.setInformativeText('Already up-to-date')
