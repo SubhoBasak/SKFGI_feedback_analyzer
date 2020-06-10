@@ -182,23 +182,6 @@
          </spacer>
         </item>
         <item>
-         <widget class="QPushButton" name="preview_button">
-          <property name="cursor">
-           <cursorShape>PointingHandCursor</cursorShape>
-          </property>
-          <property name="toolTip">
-           <string>Preview the analysis output.</string>
-          </property>
-          <property name="text">
-           <string>Preview</string>
-          </property>
-          <property name="icon">
-           <iconset>
-            <normaloff>icons/preview.ico</normaloff>icons/preview.ico</iconset>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QPushButton" name="save_button">
           <property name="cursor">
            <cursorShape>PointingHandCursor</cursorShape>

@@ -4,6 +4,7 @@ import requests
 import threading
 import webbrowser
 from datetime import datetime
+from fpdf import FPDF
 
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QMessageBox, QWidget, QSplashScreen, QColorDialog
 from PyQt5.QtCore import QAbstractTableModel, Qt, QTimer, QSize
@@ -48,7 +49,6 @@ class Setup():
         self.loading_screen()
         self.data = None
         self.output_data = None
-        self.file = None
         self.colors = ['#f0e443', '#f77e45', '#f74940', '#4bfa91', '#69d1d1', '#4a61f7']
         self.version = '1.0.0'
         self.map = [
@@ -70,33 +70,30 @@ class Setup():
 
         self.window.menuFile.addAction(QIcon('icons/open.ico'), 'Open', self.open_func, 'Ctrl+O')
         self.window.menuFile.addSeparator()
-        self.window.menuFile.addAction(QIcon('icons/save.ico'), 'Save', self.save_func, 'Ctrl+S')
-        self.window.menuFile.addAction(QIcon('icons/save_as.ico'), 'Save As', self.save_as_func, 'Ctrl+Shift+S')
+        self.window.menuFile.addAction(QIcon('icons/save.ico'), 'Save', self.create_output, 'Ctrl+S')
         self.window.menuFile.addSeparator()
-        self.window.menuFile.addAction(QIcon('icons/exit.ico'), 'Quit', lambda: 0, 'Alt+F4')  # todo, make this ready for deploy
+        self.window.menuFile.addAction(QIcon('icons/exit.ico'), 'Quit', exit, 'Ctrl+Q')
 
-        self.window.menuOptions.addAction(QIcon('icons/preview.ico'), 'Preview', self.create_output, 'Ctrl+P')
         self.window.menuOptions.addAction(QIcon('icons/setting.ico'), 'Setting', self.open_setting, 'Ctrl+X')
         self.window.menuOptions.addAction(QIcon('icons/color'), 'Colors', self.change_graph_color, 'Ctrl+J')
 
         self.window.menuHelp.addAction(QIcon('icons/about.ico'), 'About', self.about_func, 'Ctrl+H')
-        self.window.menuHelp.addAction(QIcon('icons/update.ico'), 'Check for update', self.open_func, 'Ctrl+U')
+        self.window.menuHelp.addAction(QIcon('icons/update.ico'), 'Check for update', self.check_update, 'Ctrl+U')
 
         self.window.open_button.clicked.connect(self.open_func)
         self.window.drop_button.clicked.connect(self.drop_func)
         self.window.select_button.clicked.connect(self.select_func)
         self.window.copy_csv_button.clicked.connect(self.copy_func)
-        self.window.save_button.clicked.connect(self.save_func)
-        self.window.preview_button.clicked.connect(self.create_output)
+        self.window.save_button.clicked.connect(self.create_output)
 
         self.window.column_list.setStyleSheet('color: blue;')
 
         self.root.show()
 
     def loading_screen(self):
-        self.splash_screen = QSplashScreen(QPixmap('icons/logo.png'))
-        self.splash_screen.show()
-        QTimer.singleShot(1000, self.splash_screen.close)
+        self.top = QSplashScreen(QPixmap('icons/logo.png'))
+        self.top.show()
+        QTimer.singleShot(1000, self.top.close)
 
     def open_func(self):
         self.file_dialog = QFileDialog()
@@ -160,30 +157,40 @@ class Setup():
             self.msg_box.setInformativeText('New csv file is saved as :\n'+tmp)
             self.msg_box.show()
 
-    def save_func(self): # todo, compelete this function
-        if self.file:
-            print(self.file)
-        else:
-            self.save_as_func(title = 'Save')
-
-    def save_as_func(self, title = 'Save As'): # todo, complete this function
-        self.file, _ = QFileDialog.getSaveFileName(caption=title)
-
     def about_func(self):
         self.top = Ui_About()
         self.top_widget = QWidget()
         self.top.setupUi(self.top_widget)
         self.top.retranslateUi(self.top_widget)
 
-        tmp = os.path.join(os.path.dirname(__file__), 'Documentation/index.html')
+        tmp = os.path.join(os.path.dirname(__file__), 'Documentation/index.html').replace('/', '\\')
         self.top.doc_button.clicked.connect(lambda : webbrowser.open(tmp))
 
         self.top_widget.show()
 
-    def check_update(self): # todo, complete the function
-        resp = requests.get(url = 'https://www.google.com')
-        if resp.json().get('version') != self.version:
-            pass
+    def check_update(self):
+        try:
+            self.top = QSplashScreen(QPixmap('icons/wait.png'))
+            self.top.show()
+            QTimer.singleShot(3000, self.top.close)
+
+            resp = requests.get(url = 'https://raw.githubusercontent.com/SubhoBasak/SKFGI_feedback_analyzer/tree/master/Output/version.txt')
+            self.tmp = QMessageBox()
+            self.tmp.setWindowTitle('Update')
+            self.tmp.setWindowIcon(QIcon('icons/logo.png'))
+            if resp.text != self.version:
+                self.tmp.setInformativeText('New update available!\nDownlaod from : https://raw.githubusercontent.com/SubhoBasak/SKFGI_feedback_analyzer/master/Output/mysetup.exe')
+            else:
+                self.tmp.setInformativeText('Already up-to-date')
+            self.tmp.show()
+        except Exception as e:
+            self.top = Ui_Error()
+            self.top_widget = QWidget()
+            self.top.setupUi(self.top_widget)
+            self.top.retranslateUi(self.top_widget)
+            self.top.textBrowser.setTextColor(QColor(255, 0, 0))
+            self.top.textBrowser.setText(repr(e))
+            self.top_widget.show()
 
     def open_setting(self):
         self.top = Ui_Setting()
@@ -289,19 +296,39 @@ class Setup():
         self.top.color6_button.setStyleSheet('background : '+self.colors[5])
 
     def create_output(self):
+        self.top = QSplashScreen(QPixmap('icons/wait.png'))
+        self.top.show()
+
         self.thread = threading.Thread(target = self.thread_func)
         self.thread.start()
+
+        QTimer.singleShot(10000, self.top.close)
 
     def thread_func(self):
         self.prepare_output_data()
         self.calculate_percentage_and_plot()
+        tmp_path = self.create_pdf()
+        webbrowser.open(tmp_path)
+
+    def create_pdf(self):
+        pdf_file = FPDF()
+        pdf_file.add_page()
+        for i in os.listdir('Tmp'):
+            i = 'Tmp/'+i
+            pdf_file.image(os.path.join(os.path.dirname(__file__), i), w = 196, h = 116)
+            pdf_file.ln()
+        tmp_path = os.path.join(os.path.expanduser('~'), 'feed_back'+datetime.now().isoformat().replace(':', '-')+'.pdf')
+        pdf_file.output(tmp_path, 'F')
+        return tmp_path
 
     def calculate_percentage_and_plot(self):
         if self.output_data.__class__.__name__ == 'DataFrame':
             for file in os.listdir('Tmp'):
                 os.remove('Tmp/'+file)
             fig = plt.figure(figsize=(12, 7))
-            for name, grp in self.output_data.groupby('subject'):
+            main_group = self.output_data.groupby('subject')
+
+            for name, grp in main_group:
                 teachers_name = grp['teacher'].unique()
                 q = []
                 p = []
@@ -336,6 +363,7 @@ class Setup():
         if self.data.__class__.__name__ == 'DataFrame':
             try:
                 self.output_data = {'question': [], 'subject': [], 'teacher': [], 'feedback': []}
+                ln = len(self.data)
                 for col in self.data:
                     qus, sub, tec = col.split('[')
                     self.output_data['question'].append(qus.strip().strip(']'))

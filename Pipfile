@@ -8,7 +8,6 @@ verify_ssl = true
 [packages]
 pip = "*"
 numpy = "*"
-scipy = "*"
 pandas = "*"
 matplotlib = "*"
 pyqt5 = "*"
