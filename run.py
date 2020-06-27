@@ -50,7 +50,7 @@ class Setup():
         self.data = None
         self.output_data = None
         self.colors = ['#f0e443', '#f77e45', '#f74940', '#4bfa91', '#69d1d1', '#4a61f7']
-        self.version = '1.0.0'
+        self.version = '1.0.1'
         self.map = [
             {'Excellent': 5,
              'Very Good': 4,
@@ -180,7 +180,7 @@ class Setup():
             self.tmp.setWindowTitle('Update')
             self.tmp.setWindowIcon(QIcon('icons/logo.png'))
             if resp != self.version:
-                self.tmp.setInformativeText('New update available!\nDownlaod from : https://raw.githubusercontent.com/SubhoBasak/SKFGI_feedback_analyzer/master/Output/mysetup.exe')
+                self.tmp.setInformativeText('New update available!\nDownlaod from : https://github.com/SubhoBasak/SKFGI_feedback_analyzer/tree/master/Output')
             else:
                 self.tmp.setInformativeText('Already up-to-date')
             self.tmp.show()
