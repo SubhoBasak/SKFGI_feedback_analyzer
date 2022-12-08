@@ -14,7 +14,7 @@ pyqt5 = "*"
 pyqt5-stubs = "*"
 requests = "*"
 fpdf = "*"
-certifi = "==2020.4.5.2"
+certifi = "==2022.12.7"
 setuptools = "==47.1.1"
 
 [requires]
